@@ -4,11 +4,12 @@ const supabase = require('../config/supabase');
 const authMiddleware = require('../middleware/auth');
 
 // Attendance mark (only student)
+// FIX: Pehle se absent row exist karti hai (session create pe insert hua tha),
+//      isliye upsert se sirf status update hoga absent -> present.
 router.post('/mark', authMiddleware, async (req, res) => {
   const { session_id, qr_verified, gps_verified, face_verified } = req.body;
   const student_id = req.user.id;
 
-  // Role check — only student can mark attendance
   if (req.user.role !== 'student') {
     return res.status(403).json({ error: 'Only students can mark attendance' });
   }
@@ -27,7 +28,7 @@ router.post('/mark', authMiddleware, async (req, res) => {
         qr_verified,
         gps_verified,
         face_verified,
-        marked_at: new Date()
+        marked_at: new Date().toISOString(),
       }, { onConflict: 'session_id,student_id' })
       .select()
       .single();
@@ -45,7 +46,6 @@ router.patch('/override', authMiddleware, async (req, res) => {
   const { session_id, student_id, status } = req.body;
   const teacher_id = req.user.id;
 
-  // Role check — only teacher czn override
   if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Only teachers can override attendance' });
   }
@@ -58,7 +58,7 @@ router.patch('/override', authMiddleware, async (req, res) => {
         student_id,
         status,
         manually_overridden: true,
-        overridden_by: teacher_id
+        overridden_by: teacher_id,
       }, { onConflict: 'session_id,student_id' })
       .select()
       .single();
@@ -72,6 +72,7 @@ router.patch('/override', authMiddleware, async (req, res) => {
 });
 
 // Student attendance fetch
+// FIX: Ab absent rows bhi hongi table mein, isliye sab records aayenge (present + absent)
 router.get('/student/:student_id', authMiddleware, async (req, res) => {
   const { student_id } = req.params;
 
@@ -105,14 +106,14 @@ router.get('/session/:session_id', authMiddleware, async (req, res) => {
   }
 });
 
-// Average attendance (for admin dashbaord)
+// Average attendance (for admin dashboard)
 router.get('/avg', authMiddleware, async (req, res) => {
   try {
-    const { data: total, error: totalErr } = await supabase
+    const { count: totalCount, error: totalErr } = await supabase
       .from('attendance')
       .select('*', { count: 'exact', head: true });
 
-    const { data: present, error: presentErr } = await supabase
+    const { count: presentCount, error: presentErr } = await supabase
       .from('attendance')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'present');
@@ -121,11 +122,38 @@ router.get('/avg', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Could not fetch attendance data' });
     }
 
-    const totalCount = total?.length || 0;
-    const presentCount = present?.length || 0;
-    const avg = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+    const avg = (totalCount || 0) > 0
+      ? Math.round(((presentCount || 0) / totalCount) * 100)
+      : 0;
 
     res.json({ avg });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Student statistics summary
+// FIX: Ab seedha attendance table se count karo — absent rows exist karti hain
+//      isliye complex session join ki zaroorat nahi.
+//      total   = student ke sabhi attendance records
+//      present = status='present' wale
+//      absent  = status='absent' wale
+router.get('/stats/:student_id', authMiddleware, async (req, res) => {
+  const { student_id } = req.params;
+
+  try {
+    const { data: records, error } = await supabase
+      .from('attendance')
+      .select('status')
+      .eq('student_id', student_id);
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    const total   = records.length;
+    const present = records.filter(r => r.status === 'present').length;
+    const absent  = records.filter(r => r.status === 'absent').length;
+
+    res.json({ total, present, absent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

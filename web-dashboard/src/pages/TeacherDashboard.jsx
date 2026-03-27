@@ -15,6 +15,7 @@ export default function TeacherDashboard() {
   const [qrImage, setQrImage] = useState(null);
   const [countdown, setCountdown] = useState(5);
   const [showModal, setShowModal] = useState(false);
+  const [activeAttendance, setActiveAttendance] = useState([]);
 
   // Timetable based state
   const [todaySchedule, setTodaySchedule] = useState([]);
@@ -25,6 +26,8 @@ export default function TeacherDashboard() {
   // Manual form (fallback)
   const [subjects, setSubjects] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [filter, setFilter] = useState({ dept: '', year: '', sem: '', sectionCode: '' });
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     subject_id: '', room_id: '', start_time: '09:00', end_time: '09:50', section: '',
@@ -38,6 +41,7 @@ export default function TeacherDashboard() {
     fetchTodaySchedule();
     fetchSubjects();
     fetchRooms();
+    fetchDepartments();
     return () => { clearInterval(intervalRef.current); clearInterval(tickRef.current); };
   }, []);
 
@@ -48,6 +52,24 @@ export default function TeacherDashboard() {
     tickRef.current = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 5), 1000);
     return () => { clearInterval(intervalRef.current); clearInterval(tickRef.current); };
   }, [activeSession]);
+
+  useEffect(() => {
+    let poll = null;
+    if (activeSession) {
+      fetchActiveAttendance();
+      poll = setInterval(fetchActiveAttendance, 3000);
+    } else {
+      setActiveAttendance([]);
+    }
+    return () => clearInterval(poll);
+  }, [activeSession]);
+
+  const fetchActiveAttendance = async () => {
+    try {
+      const res = await api.get(`/attendance/session/${activeSession}`);
+      setActiveAttendance(res.data);
+    } catch { console.error('attendance poll failed'); }
+  };
 
   const fetchSessions = async () => {
     try { const res = await api.get(`/sessions/teacher/${user.id}`); setSessions(res.data); }
@@ -70,6 +92,10 @@ export default function TeacherDashboard() {
   const fetchRooms = async () => {
     try { const res = await api.get('/sessions/rooms'); setRooms(res.data); }
     catch { console.error('rooms fetch failed'); }
+  };
+  const fetchDepartments = async () => {
+    try { const res = await api.get('/students/departments'); setDepartments(res.data); }
+    catch { console.error('departments fetch failed'); }
   };
 
   const generateQR = async (session_id) => {
@@ -99,10 +125,16 @@ export default function TeacherDashboard() {
   };
 
   // Manual session create
+  const ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII' };
+  
   const createManual = async () => {
     if (!form.subject_id || !form.room_id) { toast.error('Please select subject and room'); return; }
+    
+    const derivedSection = (filter.dept && filter.sem && filter.sectionCode) 
+      ? `${filter.dept} ${ROMAN[filter.sem]} ${filter.sectionCode}` : '';
+      
     try {
-      const res = await api.post('/sessions/create', form);
+      const res = await api.post('/sessions/create', { ...form, section: derivedSection });
       setSessions(prev => [res.data, ...prev]);
       setActiveSession(res.data.id);
       setShowModal(false);
@@ -288,16 +320,53 @@ export default function TeacherDashboard() {
                 <div style={s.siItem}><div style={s.siLabel}>Date</div><div style={s.siVal}>{activeObj?.date}</div></div>
                 <div style={s.siItem}><div style={s.siLabel}>Section</div><div style={s.siVal}>{activeObj?.section || '—'}</div></div>
               </div>
-              <div style={s.qrSection}>
-                <div style={s.qrBox}>
-                  <img src={qrImage} alt="QR Code" style={{ width: 200, height: 200 }} />
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={s.qrSection}>
+                  <div style={s.qrBox}>
+                    <img src={qrImage} alt="QR Code" style={{ width: 180, height: 180 }} />
+                  </div>
+                  <div style={s.qrTimer}>Refreshing in {countdown}s</div>
+                  <div style={s.qrRefreshBar}>
+                    <div key={countdown} style={s.qrBarFill} />
+                  </div>
                 </div>
-                <div style={s.qrTimer}>Refreshing in {countdown}s</div>
-                <div style={s.qrRefreshBar}>
-                  <div key={countdown} style={s.qrBarFill} />
+
+                <div style={s.attendanceLiveSection}>
+                  <div style={s.liveCountRow}>
+                    <div style={s.liveCountLabel}>Students Present</div>
+                    <div style={s.liveCountVal}>{activeAttendance.filter(a => a.status === 'present').length}</div>
+                  </div>
+                  
+                  <div style={s.liveListContainer}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: '#F4F6F9', position: 'sticky', top: 0 }}>
+                          <th style={{ ...s.th, padding: '6px 10px', fontSize: 10 }}>Enrollment</th>
+                          <th style={{ ...s.th, padding: '6px 10px', fontSize: 10 }}>Name</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeAttendance.filter(a => a.status === 'present').map((att, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #D0D5DF' }}>
+                            <td style={{ ...s.td, padding: '6px 10px', fontSize: 12 }}>{att.students?.enrollment_no}</td>
+                            <td style={{ ...s.td, padding: '6px 10px', fontSize: 12 }}>{att.students?.users?.name}</td>
+                          </tr>
+                        ))}
+                        {activeAttendance.filter(a => a.status === 'present').length === 0 && (
+                          <tr>
+                            <td colSpan={2} style={{ textAlign: 'center', padding: 20, fontSize: 11, color: '#8A8A8A' }}>
+                              Waiting for students to scan...
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
                 <button className="cdgi-btn-end" style={s.endBtn} onClick={() => endSession(activeSession)}>
                   ⏹ End Session
                 </button>
@@ -365,33 +434,15 @@ export default function TeacherDashboard() {
             </div>
             <div style={s.modalBody}>
               <div style={{ background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: 4, padding: '8px 12px', fontSize: 12, color: '#854D0E', marginBottom: 16 }}>
-                ⚠ Timetable mein schedule nahi mila? Yahan manually create karo.
+                ⚠ Schedule not found in Timetable? Create a manual session here.
               </div>
+              
               <div style={s.formRow}>
                 <label style={s.formLabel}>Date</label>
                 <input style={s.formInput} type="date" value={form.date}
                   onChange={e => setForm({ ...form, date: e.target.value })} />
               </div>
-              <div style={s.formRow}>
-                <label style={s.formLabel}>Subject</label>
-                <select style={s.formInput} value={form.subject_id}
-                  onChange={e => setForm({ ...form, subject_id: e.target.value })}>
-                  <option value="">-- Select Subject --</option>
-                  {subjects.map(sub => (
-                    <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
-                  ))}
-                </select>
-              </div>
-              <div style={s.formRow}>
-                <label style={s.formLabel}>Room</label>
-                <select style={s.formInput} value={form.room_id}
-                  onChange={e => setForm({ ...form, room_id: e.target.value })}>
-                  <option value="">-- Select Room --</option>
-                  {rooms.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
+              
               <div style={s.formGrid}>
                 <div style={s.formRow}>
                   <label style={s.formLabel}>Start Time</label>
@@ -405,6 +456,78 @@ export default function TeacherDashboard() {
                   <select style={s.formInput} value={form.end_time}
                     onChange={e => setForm({ ...form, end_time: e.target.value })}>
                     {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              
+              <div style={s.formRow}>
+                <label style={s.formLabel}>Subject</label>
+                <select style={s.formInput} value={form.subject_id}
+                  onChange={e => setForm({ ...form, subject_id: e.target.value })}>
+                  <option value="">-- Select Subject --</option>
+                  {subjects.map(sub => (
+                    <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={s.formRow}>
+                <label style={s.formLabel}>Room</label>
+                <select style={s.formInput} value={form.room_id}
+                  onChange={e => setForm({ ...form, room_id: e.target.value })}>
+                  <option value="">-- Select Room --</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={s.formGrid}>
+                <div style={s.formRow}>
+                  <label style={s.formLabel}>Department</label>
+                  <select style={s.formInput} value={filter.dept}
+                    onChange={e => setFilter({ dept: e.target.value, year: '', sem: '', sectionCode: '' })}>
+                    <option value="">-- Select --</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.code}>{d.code}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={s.formRow}>
+                  <label style={s.formLabel}>Year</label>
+                  <select style={s.formInput} value={filter.year}
+                    onChange={e => setFilter(prev => ({ ...prev, year: e.target.value, sem: '', sectionCode: '' }))}
+                    disabled={!filter.dept}>
+                    <option value="">-- Select --</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={s.formGrid}>
+                <div style={s.formRow}>
+                  <label style={s.formLabel}>Semester</label>
+                  <select style={s.formInput} value={filter.sem}
+                    onChange={e => setFilter(prev => ({ ...prev, sem: e.target.value, sectionCode: '' }))}
+                    disabled={!filter.year}>
+                    <option value="">-- Select --</option>
+                    {filter.year === '1' && <><option value="1">Sem 1</option><option value="2">Sem 2</option></>}
+                    {filter.year === '2' && <><option value="3">Sem 3</option><option value="4">Sem 4</option></>}
+                    {filter.year === '3' && <><option value="5">Sem 5</option><option value="6">Sem 6</option></>}
+                    {filter.year === '4' && <><option value="7">Sem 7</option><option value="8">Sem 8</option></>}
+                  </select>
+                </div>
+                <div style={s.formRow}>
+                  <label style={s.formLabel}>Section</label>
+                  <select style={s.formInput} value={filter.sectionCode}
+                    onChange={e => setFilter(prev => ({ ...prev, sectionCode: e.target.value }))}
+                    disabled={!filter.sem}>
+                    <option value="">-- Select --</option>
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
                   </select>
                 </div>
               </div>
@@ -465,9 +588,16 @@ const s = {
   qrSection: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 20 },
   qrBox: { border: '2px solid #2C3E6B', borderRadius: 8, padding: 16, background: '#fff', display: 'inline-block' },
   qrTimer: { fontSize: 12, color: '#8A8A8A' },
-  qrRefreshBar: { width: 200, height: 4, background: '#D0D5DF', borderRadius: 2, overflow: 'hidden' },
+  qrRefreshBar: { width: 180, height: 4, background: '#D0D5DF', borderRadius: 2, overflow: 'hidden' },
   qrBarFill: { height: '100%', background: '#2C3E6B', borderRadius: 2, animation: 'barFill 5s linear forwards' },
   endBtn: { background: '#fff', border: '1.5px solid #DC2626', color: '#DC2626', borderRadius: 6, padding: '9px 20px', fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer' },
+
+  // Live Tracking
+  attendanceLiveSection: { flex: 1, border: '1px solid #D0D5DF', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
+  liveCountRow: { background: '#F4F6F9', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #D0D5DF' },
+  liveCountLabel: { fontSize: 12, fontWeight: 600, color: '#4A4A4A' },
+  liveCountVal: { fontSize: 18, fontWeight: 700, color: '#2C3E6B' },
+  liveListContainer: { height: 200, overflowY: 'auto' },
 
   // Table
   table: { width: '100%', borderCollapse: 'collapse' },

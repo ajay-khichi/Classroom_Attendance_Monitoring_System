@@ -4,22 +4,21 @@ import toast from 'react-hot-toast';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-const SECTIONS_MAP = {
-  CS: ['CS I A','CS I B','CS II A','CS II B','CS III A','CS III B','CS IV A','CS IV B',
-       'CS V A','CS V B','CS VI A','CS VI B','CS VII A','CS VII B','CS VIII A','CS VIII B'],
-  IT: ['IT I A','IT I B','IT II A','IT II B','IT III A','IT III B','IT IV A','IT IV B'],
-  EC: ['EC I A','EC I B','EC II A','EC II B','EC III A','EC III B','EC IV A','EC IV B'],
-  ME: ['ME I A','ME I B','ME II A','ME II B','ME III A','ME III B','ME IV A','ME IV B'],
-};
-const ALL_SECTIONS = Object.values(SECTIONS_MAP).flat();
+
 
 export default function TimetableManager() {
   const [periods, setPeriods] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
-  const [selectedSection, setSelectedSection] = useState('');
+  const [filter, setFilter] = useState({ dept: '', year: '', sem: '', section: '' });
+  const ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII' };
+  const selectedSection = (filter.dept && filter.sem && filter.section)
+    ? `${filter.dept} ${ROMAN[filter.sem]} ${filter.section}`
+    : '';
+
   const [selectedDay, setSelectedDay] = useState(0);
   const [timetable, setTimetable] = useState([]); // array of timetable entries for selected section+day
 
@@ -32,10 +31,15 @@ export default function TimetableManager() {
     fetchSubjects();
     fetchRooms();
     fetchTeachers();
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
-    if (selectedSection) fetchTimetable();
+    if (selectedSection) {
+      fetchTimetable();
+    } else {
+      setTimetable([]);
+    }
   }, [selectedSection, selectedDay]);
 
   const fetchPeriods = async () => {
@@ -64,6 +68,13 @@ export default function TimetableManager() {
       const res = await api.get('/students/teachers');
       setTeachers(res.data);
     } catch { console.error('teachers fetch failed'); }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get('/students/departments');
+      setDepartments(res.data);
+    } catch { console.error('departments fetch failed'); }
   };
 
   const fetchTimetable = async () => {
@@ -131,18 +142,71 @@ export default function TimetableManager() {
       `}</style>
 
       {/* Section + Day Selector */}
-      <div style={ts.topControls}>
-        <div style={ts.controlGroup}>
-          <label style={ts.controlLabel}>Section</label>
-          <select className="cdgi-select" style={ts.controlSelect}
-            value={selectedSection} onChange={e => setSelectedSection(e.target.value)}>
-            <option value="">-- Select Section --</option>
-            {Object.entries(SECTIONS_MAP).map(([dept, secs]) => (
-              <optgroup key={dept} label={`${dept} Department`}>
-                {secs.map(sec => <option key={sec} value={sec}>{sec}</option>)}
-              </optgroup>
-            ))}
-          </select>
+      <div style={{ ...ts.topControls, background: '#fff', border: '1px solid #D0D5DF', borderRadius: 6, padding: 16 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', flex: 1 }}>
+          {/* Department */}
+          <div style={ts.controlGroup}>
+            <label style={ts.controlLabel}>Department</label>
+            <select className="cdgi-select" style={{...ts.controlSelect, minWidth: 100}}
+              value={filter.dept}
+              onChange={e => setFilter({ dept: e.target.value, year: '', sem: '', section: '' })}>
+              <option value="">-- Select --</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.code}>{d.name} ({d.code})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year */}
+          <div style={ts.controlGroup}>
+            <label style={ts.controlLabel}>Year</label>
+            <select className="cdgi-select" style={{...ts.controlSelect, minWidth: 100}}
+              value={filter.year}
+              onChange={e => setFilter(prev => ({ ...prev, year: e.target.value, sem: '', section: '' }))}
+              disabled={!filter.dept}>
+              <option value="">-- Select --</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
+
+          {/* Semester */}
+          <div style={ts.controlGroup}>
+            <label style={ts.controlLabel}>Semester</label>
+            <select className="cdgi-select" style={{...ts.controlSelect, minWidth: 100}}
+              value={filter.sem}
+              onChange={e => setFilter(prev => ({ ...prev, sem: e.target.value, section: '' }))}
+              disabled={!filter.year}>
+              <option value="">-- Select --</option>
+              {filter.year === '1' && <><option value="1">Sem 1</option><option value="2">Sem 2</option></>}
+              {filter.year === '2' && <><option value="3">Sem 3</option><option value="4">Sem 4</option></>}
+              {filter.year === '3' && <><option value="5">Sem 5</option><option value="6">Sem 6</option></>}
+              {filter.year === '4' && <><option value="7">Sem 7</option><option value="8">Sem 8</option></>}
+            </select>
+          </div>
+
+          {/* Section */}
+          <div style={ts.controlGroup}>
+            <label style={ts.controlLabel}>Section</label>
+            <select className="cdgi-select" style={{...ts.controlSelect, minWidth: 100}}
+              value={filter.section}
+              onChange={e => setFilter(prev => ({ ...prev, section: e.target.value }))}
+              disabled={!filter.sem}>
+              <option value="">-- Select --</option>
+              <option value="A">Section A</option>
+              <option value="B">Section B</option>
+            </select>
+          </div>
+
+          {/* Reset */}
+          {(filter.dept || filter.year || filter.sem || filter.section) && (
+            <button style={{ padding: '8px 14px', background: '#F4F6F9', border: '1px solid #D0D5DF', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: '#4A4A4A' }}
+              onClick={() => setFilter({ dept: '', year: '', sem: '', section: '' })}>
+              ✕ Reset
+            </button>
+          )}
         </div>
 
         <div style={ts.controlGroup}>
@@ -236,7 +300,7 @@ export default function TimetableManager() {
             <div style={ts.modalHeader}>
               <div>
                 <div style={ts.modalTitle}>Edit Period — {editSlot.label}</div>
-                <div style={ts.modalSub}>{selectedSection} · {DAYS[selectedDay]} · {editSlot.start_time?.slice(0,5)} – {editSlot.end_time?.slice(0,5)}</div>
+                <div style={ts.modalSub}>{selectedSection} · {DAYS[selectedDay]} · {editSlot.start_time?.slice(0, 5)} – {editSlot.end_time?.slice(0, 5)}</div>
               </div>
               <button style={ts.modalClose} onClick={() => setEditSlot(null)}>✕</button>
             </div>

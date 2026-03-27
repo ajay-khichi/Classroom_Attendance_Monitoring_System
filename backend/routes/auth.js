@@ -9,7 +9,7 @@ const FACE_SERVER_URL = process.env.FACE_SERVER_URL || 'http://localhost:5001';
 
 // REGISTER — fro student status='pending', teacher/admin direct register
 router.post('/register', async (req, res) => {
-  const { name, email, password, role, enrollment_no, semester, department_id, designation } = req.body;
+  const { name, email, password, role, enrollment_no, semester, department_id, designation, section } = req.body;
 
   try {
     const password_hash = await bcrypt.hash(password, 10);
@@ -30,6 +30,7 @@ router.post('/register', async (req, res) => {
           enrollment_no,
           semester,
           department_id,
+          section: (section || '').trim().toUpperCase(),
           status: 'pending', // pending approval
         });
 

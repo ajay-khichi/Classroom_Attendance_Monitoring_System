@@ -4,13 +4,6 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import TimetableManager from '../components/TimetableManager';
 
-const SECTIONS_MAP = {
-  CS: ['CS I A','CS I B','CS II A','CS II B','CS III A','CS III B','CS IV A','CS IV B','CS V A','CS V B','CS VI A','CS VI B','CS VII A','CS VII B','CS VIII A','CS VIII B'],
-  IT: ['IT I A','IT I B','IT II A','IT II B','IT III A','IT III B','IT IV A','IT IV B'],
-  EC: ['EC I A','EC I B','EC II A','EC II B','EC III A','EC III B','EC IV A','EC IV B'],
-  ME: ['ME I A','ME I B','ME II A','ME II B','ME III A','ME III B','ME IV A','ME IV B'],
-};
-
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -18,6 +11,7 @@ export default function AdminDashboard() {
   const [departments, setDepartments] = useState([]);
 
   const [teachers, setTeachers] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [facDept, setFacDept] = useState('ALL');
@@ -44,7 +38,16 @@ export default function AdminDashboard() {
     fetchStudents();
     fetchRooms();
     fetchPendingRequests();
+    fetchRecentActivity();
   }, []);
+
+  useEffect(() => {
+    let totalPct = 0; let count = 0;
+    Object.values(stuAttendance).forEach(pct => {
+      if (pct !== null && pct !== undefined) { totalPct += pct; count++; }
+    });
+    setStats(prev => ({ ...prev, avg: count > 0 ? Math.round(totalPct / count) : 0 }));
+  }, [stuAttendance]);
 
   useEffect(() => {
     setStats(prev => ({
@@ -60,11 +63,17 @@ export default function AdminDashboard() {
       const res = await api.get('/students/departments');
       setDepartments(res.data);
     } catch {
-      // Fallback 
       setDepartments([
-        { id: 'fd1e3235-48d4-4b08-bfd4-4af05a53ff91', name: 'Computer Science (CSE)' },
+        { id: 'fd1e3235-48d4-4b08-bfd4-4af05a53ff91', name: 'Computer Science (CSE)', code: 'CS' },
       ]);
     }
+  };
+
+  const fetchRecentActivity = async () => {
+    try {
+      const res = await api.get('/sessions/all');
+      setRecentActivity(res.data);
+    } catch { console.error('recent activity fetch failed'); }
   };
 
   const fetchTeachers = async () => {
@@ -83,10 +92,8 @@ export default function AdminDashboard() {
         const map = {};
         await Promise.all(res.data.map(async (st) => {
           try {
-            const r = await api.get('/attendance/student/' + st.id);
-            const total = r.data.length;
-            const present = r.data.filter(a => a.status === 'present').length;
-            map[st.id] = total > 0 ? Math.round((present / total) * 100) : null;
+            const r = await api.get('/attendance/stats/' + st.id);
+            map[st.id] = r.data.total > 0 ? Math.round((r.data.present / r.data.total) * 100) : null;
           } catch { map[st.id] = null; }
         }));
         setStuAttendance(map);
@@ -105,10 +112,8 @@ export default function AdminDashboard() {
     const map = {};
     await Promise.all(studentList.map(async (st) => {
       try {
-        const res = await api.get('/attendance/student/' + st.id);
-        const total = res.data.length;
-        const present = res.data.filter(r => r.status === 'present').length;
-        map[st.id] = total > 0 ? Math.round((present / total) * 100) : null;
+        const res = await api.get('/attendance/stats/' + st.id);
+        map[st.id] = res.data.total > 0 ? Math.round((res.data.present / res.data.total) * 100) : null;
       } catch { map[st.id] = null; }
     }));
     setStuAttendance(map);
@@ -269,8 +274,8 @@ export default function AdminDashboard() {
     if (stuFilter.dept && st.department_id !== stuFilter.dept) return false;
     if (stuFilter.sem && st.semester !== parseInt(stuFilter.sem)) return false;
     if (stuFilter.section) {
-      const lastChar = (st.enrollment_no || '').slice(-1).toUpperCase();
-      if (lastChar !== stuFilter.section) return false;
+      const sec = (st.section || '').toUpperCase();
+      if (!sec.endsWith(stuFilter.section.toUpperCase())) return false;
     }
     return true;
   });
@@ -431,32 +436,44 @@ export default function AdminDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                   <div style={s.card}>
                     <div style={s.sectionTitle}>Department-wise Attendance</div>
-                    {[{ label: 'CS', pct: 84 }, { label: 'IT', pct: 79 }, { label: 'EC', pct: 87 }, { label: 'ME', pct: 76 }].map(d => (
-                      <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, color: '#4A4A4A', width: 80, flexShrink: 0 }}>{d.label}</div>
-                        <div style={{ flex: 1, height: 8, background: '#F4F6F9', borderRadius: 4, overflow: 'hidden' }}>
-                          <div className="mini-bar-fill" style={{ width: `${d.pct}%` }} />
+                    {departments.map(d => {
+                      const deptStudents = students.filter(st => st.department_id === d.id);
+                      let totalPct = 0; let count = 0;
+                      deptStudents.forEach(st => {
+                        const pct = stuAttendance[st.id];
+                        if (pct !== null && pct !== undefined) { totalPct += pct; count++; }
+                      });
+                      const pct = count > 0 ? Math.round(totalPct / count) : 0;
+                      return (
+                        <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, color: '#4A4A4A', width: 60, flexShrink: 0 }}>{d.code}</div>
+                          <div style={{ flex: 1, height: 8, background: '#F4F6F9', borderRadius: 4, overflow: 'hidden' }}>
+                            <div className="mini-bar-fill" style={{ width: `${pct}%`, background: deptStudents.length === 0 ? '#D0D5DF' : '#2C3E6B' }} />
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 500, color: '#1A1A1A', width: 36, textAlign: 'right' }}>
+                            {deptStudents.length === 0 ? '—' : `${pct}%`}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 12, fontWeight: 500, color: '#1A1A1A', width: 36, textAlign: 'right' }}>{d.pct}%</div>
-                      </div>
-                    ))}
+                      );
+                    })}
+                    {departments.length === 0 && <div style={{ fontSize: 13, color: '#8A8A8A' }}>No departments data</div>}
                   </div>
                   <div style={s.card}>
-                    <div style={s.sectionTitle}>Recent Activity</div>
-                    {[
-                      { color: '#16A34A', text: 'New faculty added successfully', time: 'Today, 10:30 AM' },
-                      { color: '#2C3E6B', text: 'Room GPS coordinates updated', time: 'Today, 09:15 AM' },
-                      { color: '#D97706', text: 'Attendance report exported', time: 'Yesterday, 4:00 PM' },
-                      { color: '#16A34A', text: 'New room added successfully', time: 'Yesterday, 2:20 PM' },
-                    ].map((a, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: i < 3 ? '1px solid #D0D5DF' : 'none' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, marginTop: 5, flexShrink: 0 }} />
+                    <div style={s.sectionTitle}>Recent Class Activity</div>
+                    {recentActivity.map((a, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: i < recentActivity.length - 1 ? '1px solid #D0D5DF' : 'none' }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.is_active ? '#16A34A' : '#D97706', marginTop: 5, flexShrink: 0 }} />
                         <div>
-                          <div style={{ fontSize: 13, color: '#1A1A1A' }}>{a.text}</div>
-                          <div style={{ fontSize: 11, color: '#8A8A8A', marginTop: 2 }}>{a.time}</div>
+                          <div style={{ fontSize: 13, color: '#1A1A1A' }}>
+                            <span style={{fontWeight: 600}}>{a.users?.name || 'Class'}</span> started session for <strong>{a.subjects?.name || 'Subject'}</strong>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#8A8A8A', marginTop: 2 }}>
+                            {new Date(a.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </div>
                     ))}
+                    {recentActivity.length === 0 && <div style={{ fontSize: 13, color: '#8A8A8A', padding: '10px 0' }}>No recent activity.</div>}
                   </div>
                 </div>
               </div>
@@ -657,7 +674,7 @@ export default function AdminDashboard() {
                                 </span>
                               </td>
                               <td style={s.td}>Sem {st.semester}</td>
-                              <td style={s.td}>{secLetter}</td>
+                              <td style={s.td}>{st.section || '—'}</td>
                               <td style={s.td}>
                                 <span style={{ ...s.badge, background: st.status === 'approved' ? '#DCFCE7' : st.status === 'rejected' ? '#FEF2F2' : '#FEF3C7', color: st.status === 'approved' ? '#16A34A' : st.status === 'rejected' ? '#DC2626' : '#D97706', fontSize: 11 }}>
                                   {st.status || 'pending'}

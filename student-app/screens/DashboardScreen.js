@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StatusBar as RNStatusBar } from 'react-native';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, RefreshControl, StatusBar, SafeAreaView, TextInput, Platform
+  StyleSheet, RefreshControl, StatusBar, SafeAreaView, Platform
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../context/AuthContext';
@@ -36,7 +36,11 @@ const displayDate = (dateStr) => {
 
 export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuth();
+
+  // FIX: attendance = detailed records (present + absent both)
+  //      stats = { total, present, absent } — from /attendance/stats/:id
   const [attendance, setAttendance] = useState([]);
+  const [stats, setStats] = useState({ total: 0, present: 0, absent: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
@@ -48,8 +52,24 @@ export default function DashboardScreen({ navigation }) {
   const [filterApplied, setFilterApplied] = useState(false);
   const [filtered, setFiltered] = useState([]);
 
-  useEffect(() => { fetchAttendance(); }, []);
+  useEffect(() => {
+    fetchAttendance();
+    fetchStats();
+  }, []);
 
+  // FIX: /attendance/stats/:id ab seedha table se count karta hai
+  //      (session create hone pe absent rows insert ho jaati hain, isliye sahi data milta hai)
+  const fetchStats = async () => {
+    try {
+      const res = await api.get(`/attendance/stats/${user.id}`);
+      setStats(res.data);
+    } catch (err) {
+      console.error('stats fetch failed', err);
+    }
+  };
+
+  // FIX: /attendance/student/:id ab absent records bhi return karta hai
+  //      (pehle sirf present records the — absent tab dikhta tha jab student ne mark kiya ho)
   const fetchAttendance = async () => {
     try {
       const res = await api.get(`/attendance/student/${user.id}`);
@@ -61,16 +81,15 @@ export default function DashboardScreen({ navigation }) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAttendance();
+    await Promise.all([fetchAttendance(), fetchStats()]);
     setRefreshing(false);
   };
 
-  const totalClasses = attendance.length;
-  const present = attendance.filter(a => a.status === 'present').length;
-  const absent = totalClasses - present;
+  const { total: totalClasses, present, absent } = stats;
   const percentage = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : 0;
   const pctColor = percentage >= 75 ? COLORS.green : percentage >= 60 ? COLORS.yellow : COLORS.red;
 
+  // Subject-wise breakdown — sirf present records se calculate karo (absent rows mein bhi subjects hain)
   const subjectMap = {};
   attendance.forEach(a => {
     const name = a.sessions?.subjects?.name || 'Class';
@@ -100,7 +119,7 @@ export default function DashboardScreen({ navigation }) {
   const displayList = filterApplied ? filtered : attendance;
   const fTotal   = displayList.length;
   const fPresent = displayList.filter(a => a.status === 'present').length;
-  const fAbsent  = fTotal - fPresent;
+  const fAbsent  = displayList.filter(a => a.status === 'absent').length;
   const fPct     = fTotal > 0 ? Math.round((fPresent / fTotal) * 100) : 0;
   const dateOrder = [...new Set(displayList.map(a => new Date(a.marked_at).toISOString().split('T')[0]))];
 
@@ -115,7 +134,6 @@ export default function DashboardScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.navy }}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
 
-      {/* TOPBAR — fixed padding so name & settings don't overlap */}
       <View style={s.topbar}>
         <View style={{ flex: 1, marginRight: 12 }}>
           <Text style={s.greeting}>{getGreeting()}</Text>
@@ -140,6 +158,7 @@ export default function DashboardScreen({ navigation }) {
             <>
               <View style={s.heroCard}>
                 <Text style={s.heroLabel}>Overall Attendance</Text>
+                {/* FIX: percentage ab correct hai — total mein absent bhi count hote hain */}
                 <Text style={[s.heroPct, { color: pctColor }]}>{percentage}%</Text>
                 <Text style={s.heroSub}>
                   {user?.enrollment_no || '—'} · {user?.section || 'Student'}
@@ -291,7 +310,7 @@ export default function DashboardScreen({ navigation }) {
                 />
               )}
 
-              {/* STAT PILLS */}
+              {/* STAT PILLS — filter applied hone par filtered stats dikhao */}
               <View style={s.statRow}>
                 <View style={s.statPill}>
                   <Text style={[s.statVal, { color: COLORS.navy }]}>{fTotal}</Text>

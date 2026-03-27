@@ -9,6 +9,7 @@ export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({
     name: '', email: '', password: '',
     enrollment_no: '', semester: '',
+    section: '', department_id: 'fd1e3235-48d4-4b08-bfd4-4af05a53ff91',
   });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ export default function RegisterScreen({ navigation }) {
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const handleRegister = async () => {
-    if (!form.name || !form.email || !form.password || !form.enrollment_no || !form.semester) {
+    if (!form.name || !form.email || !form.password || !form.enrollment_no || !form.semester || !form.section) {
       return Alert.alert('Error', 'Please fill all fields');
     }
     try {
@@ -25,7 +26,6 @@ export default function RegisterScreen({ navigation }) {
         ...form,
         role: 'student',
         semester: parseInt(form.semester),
-        department_id: 'fd1e3235-48d4-4b08-bfd4-4af05a53ff91',
       });
       navigation.navigate('FaceScan', { userId: res.data.user.id, token: res.data.token });
     } catch (err) {
@@ -41,6 +41,7 @@ export default function RegisterScreen({ navigation }) {
     { key: 'password',      label: 'Password',            placeholder: 'Min 8 chars', secure: true },
     { key: 'enrollment_no', label: 'Enrollment Number',   placeholder: 'eg. 0832CS231001' },
     { key: 'semester',      label: 'Semester',            placeholder: '1 to 8', keyboard: 'numeric' },
+    { key: 'section',       label: 'Section Code',        placeholder: 'CS I A or IT V B' },
   ];
 
   return (

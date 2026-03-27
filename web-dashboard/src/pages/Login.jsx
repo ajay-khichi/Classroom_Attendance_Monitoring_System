@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
- 
+
 export default function Login() {
   const { login } = useAuth();
   const [role, setRole] = useState('teacher');
@@ -10,25 +10,26 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const [passChecks, setPassChecks] = useState({
     len: false, upper: false, lower: false, num: false, special: false,
   });
- 
+
   const checkPassword = (val) => {
     setPassChecks({
-      len:     val.length >= 8,
-      upper:   /[A-Z]/.test(val),
-      lower:   /[a-z]/.test(val),
-      num:     /[0-9]/.test(val),
+      len: val.length >= 8,
+      upper: /[A-Z]/.test(val),
+      lower: /[a-z]/.test(val),
+      num: /[0-9]/.test(val),
       special: /[!@#$%^&*()\-_=+[\]{};:'",.<>?/\\|`~]/.test(val),
     });
   };
- 
+
   const handlePasswordChange = (val) => {
     setPassword(val);
     checkPassword(val);
   };
- 
+
   const handleLogin = async () => {
     if (!email || !password) return toast.error('Please fill all fields');
     setLoading(true);
@@ -41,15 +42,15 @@ export default function Login() {
       setLoading(false);
     }
   };
- 
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleLogin();
   };
- 
+
   const HintRow = ({ ok, text }) => (
     <div style={{ ...s.hint, color: ok ? '#16A34A' : '#DC2626' }}>• {text}</div>
   );
- 
+
   return (
     <>
       <style>{`
@@ -60,33 +61,33 @@ export default function Login() {
         .cdgi-link:hover { text-decoration: underline; }
         .cdgi-radio { accent-color: #2C3E6B; width: 14px; height: 14px; cursor: pointer; }
       `}</style>
- 
+
       <div className="cdgi-body" style={s.body}>
         <div style={s.card}>
- 
+
           {/* Topbar */}
           <div style={s.topbar}>
-            <div style={s.topbarIcon}>A</div>
-            <div style={s.topbarTitle}>Attendance Monitoring System</div>
+
+            <div style={s.topbarTitle}>AttendX</div>
           </div>
- 
+
           {/* Card body */}
           <div style={s.cardBody}>
- 
+
             {/* Logo */}
             <div style={s.logoWrap}>
-              <img
-                src="https://upload.wikimedia.org/wikipedia/en/thumb/0/08/Chameli_Devi_Group_of_Institutions_logo.png/220px-Chameli_Devi_Group_of_Institutions_logo.png"
-                alt="CDGI Logo"
-                style={s.logo}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div style={{ ...s.logoFallback, display: 'none' }}>CDGI</div>
+              {!logoError ? (
+                <img
+                  src="/cdgi_logo.jpeg"
+                  alt="CDGI Logo"
+                  style={s.logo}
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div style={s.logoFallback}>CDGI</div>
+              )}
             </div>
- 
+
             {/* Role */}
             <div style={s.roleRow}>
               <label style={s.roleLabel}>
@@ -100,7 +101,7 @@ export default function Login() {
                 Faculty
               </label>
             </div>
- 
+
             {/* Email */}
             <div style={s.inputGroup}>
               <input
@@ -113,7 +114,7 @@ export default function Login() {
                 onKeyDown={handleKeyDown}
               />
             </div>
- 
+
             {/* Password */}
             <div style={s.inputGroup}>
               <div style={s.passWrap}>
@@ -131,42 +132,42 @@ export default function Login() {
                   {showPass ? '🙈' : '👁'}
                 </button>
               </div>
- 
+
               {showHints && (
                 <div style={s.hints}>
-                  <HintRow ok={passChecks.len}     text="Minimum 8 characters" />
-                  <HintRow ok={passChecks.upper}   text="At least 1 uppercase letter (A-Z)" />
-                  <HintRow ok={passChecks.lower}   text="At least 1 lowercase letter (a-z)" />
-                  <HintRow ok={passChecks.num}     text="At least 1 number (0-9)" />
+                  <HintRow ok={passChecks.len} text="Minimum 8 characters" />
+                  <HintRow ok={passChecks.upper} text="At least 1 uppercase letter (A-Z)" />
+                  <HintRow ok={passChecks.lower} text="At least 1 lowercase letter (a-z)" />
+                  <HintRow ok={passChecks.num} text="At least 1 number (0-9)" />
                   <HintRow ok={passChecks.special} text="At least 1 special character (!@#$ etc.)" />
                 </div>
               )}
             </div>
- 
+
             {/* Forgot password */}
             <div style={s.linksRow}>
               <button className="cdgi-link" style={s.linkBtn} type="button">
                 Forgot Password?
               </button>
             </div>
- 
+
             {/* Login btn */}
             <button
               className="cdgi-login-btn"
-              style={s.loginBtn}
+              style={{ ...s.loginBtn, opacity: loading ? 0.7 : 1 }}
               onClick={handleLogin}
               disabled={loading}
             >
               {loading ? 'Logging in...' : 'Login »'}
             </button>
- 
+
           </div>
         </div>
       </div>
     </>
   );
 }
- 
+
 const s = {
   body: {
     fontFamily: "'Poppins', sans-serif",
@@ -188,6 +189,7 @@ const s = {
     padding: '14px 20px',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
   },
   topbarIcon: {
@@ -204,7 +206,7 @@ const s = {
   logoFallback: {
     width: 115, height: 115, borderRadius: '50%',
     background: '#2C3E6B', margin: '0 auto',
-    alignItems: 'center', justifyContent: 'center',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff', fontSize: 24, fontWeight: 700,
   },
   roleRow: { display: 'flex', justifyContent: 'center', gap: 28, marginBottom: 18 },
@@ -235,4 +237,3 @@ const s = {
     transition: 'background .2s', letterSpacing: 0.3,
   },
 };
- 

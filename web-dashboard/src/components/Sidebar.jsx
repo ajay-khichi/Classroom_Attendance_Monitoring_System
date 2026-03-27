@@ -35,7 +35,7 @@ export default function Sidebar() {
         <div style={s.sidebarTop}>
           <div style={s.sLogo}>A</div>
           <div style={s.sBrand}>
-            AMS — CDGI
+            AttendX — CDGI
             <span style={s.sBrandSub}>Attendance System</span>
           </div>
         </div>
