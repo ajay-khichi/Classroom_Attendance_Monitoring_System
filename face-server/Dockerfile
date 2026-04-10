@@ -1,29 +1,32 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
+# System dependencies — dlib compile karne ke liye zaroori
 RUN apt-get update && apt-get install -y \
+    build-essential \
     cmake \
     gcc \
     g++ \
-    build-essential \
-    libx11-6 \
-    libx11-dev \
     libopenblas-dev \
     liblapack-dev \
+    libx11-6 \
+    libx11-dev \
     libboost-python-dev \
     libboost-thread-dev \
+    python3-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
-
-# CMake upgrade karo — dlib ko 3.5+ chahiye
-RUN pip install --no-cache-dir --upgrade cmake pip
 
 WORKDIR /app
 
 COPY requirements.txt .
 
-# dlib latest version install karo (version pin mat karo — cmake conflict hota hai)
+# Step 1: pip + cmake upgrade
+RUN pip install --no-cache-dir --upgrade pip cmake
+
+# Step 2: dlib alag install karo (bina version pin ke)
 RUN pip install --no-cache-dir dlib
 
+# Step 3: baaki dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
