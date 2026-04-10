@@ -1,25 +1,29 @@
 FROM python:3.11-slim
 
-# System dependencies — dlib aur face_recognition ke liye zaroori
 RUN apt-get update && apt-get install -y \
     cmake \
     gcc \
     g++ \
+    build-essential \
     libx11-6 \
     libx11-dev \
     libopenblas-dev \
     liblapack-dev \
     libboost-python-dev \
     libboost-thread-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# CMake upgrade karo — dlib ko 3.5+ chahiye
+RUN pip install --no-cache-dir --upgrade cmake pip
 
 WORKDIR /app
 
 COPY requirements.txt .
 
-# dlib pehle alag install karo (time lagta hai)
-RUN pip install --no-cache-dir cmake
-RUN pip install --no-cache-dir dlib==19.24.2
+# dlib latest version install karo (version pin mat karo — cmake conflict hota hai)
+RUN pip install --no-cache-dir dlib
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
