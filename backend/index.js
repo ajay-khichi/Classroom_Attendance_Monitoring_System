@@ -11,12 +11,25 @@ const timetableRoutes = require('./routes/timetable');
 
 const app = express();
 
+// Hardcoded + env-variable based CORS — works even if DASHBOARD_URL env var is misconfigured
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://classroom-attendance-monitoring-sys-gold.vercel.app', // production
+  process.env.DASHBOARD_URL, // Railway env variable (extra safety)
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    process.env.DASHBOARD_URL,
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    // Allow Postman, curl, mobile apps (requests with no Origin header)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
   credentials: true,
 }));
 
