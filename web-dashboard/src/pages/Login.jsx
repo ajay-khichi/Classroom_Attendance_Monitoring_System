@@ -7,31 +7,24 @@ export default function Login() {
   const [role, setRole] = useState('teacher');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showHints, setShowHints] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [passChecks, setPassChecks] = useState({
-    len: false, upper: false, lower: false, num: false, special: false,
-  });
 
-  const checkPassword = (val) => {
-    setPassChecks({
-      len: val.length >= 8,
-      upper: /[A-Z]/.test(val),
-      lower: /[a-z]/.test(val),
-      num: /[0-9]/.test(val),
-      special: /[!@#$%^&*()\-_=+[\]{};:'",.<>?/\\|`~]/.test(val),
-    });
-  };
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailError = emailTouched && (!email ? 'Email is required' : !isEmailValid ? 'Please enter a valid email' : '');
 
-  const handlePasswordChange = (val) => {
-    setPassword(val);
-    checkPassword(val);
-  };
+  const passLengthError = password.length < 8 ? 'Password must be at least 8 characters' : password.length > 16 ? 'Password must be no more than 16 characters' : '';
+  const passwordError = passwordTouched && passLengthError ? passLengthError : '';
 
   const handleLogin = async () => {
-    if (!email || !password) return toast.error('Please fill all fields');
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    if (!email || !password || emailError || passLengthError) {
+      return toast.error('Please fix the errors before logging in');
+    }
     setLoading(true);
     try {
       await login(email, password);
@@ -47,193 +40,104 @@ export default function Login() {
     if (e.key === 'Enter') handleLogin();
   };
 
-  const HintRow = ({ ok, text }) => (
-    <div style={{ ...s.hint, color: ok ? '#16A34A' : '#DC2626' }}>• {text}</div>
-  );
-
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
-        .cdgi-body * { box-sizing: border-box; margin: 0; padding: 0; }
-        .cdgi-login-btn:hover { background: #1e2c50 !important; }
-        .cdgi-input:focus { border-color: #2C3E6B !important; outline: none; }
-        .cdgi-link:hover { text-decoration: underline; }
-        .cdgi-radio { accent-color: #2C3E6B; width: 14px; height: 14px; cursor: pointer; }
-      `}</style>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      background: 'var(--bg-color)'
+    }}>
+      <div className="card fade-in" style={{ width: '100%', maxWidth: '420px', padding: '0', overflow: 'hidden' }}>
+        
+        {/* Topbar */}
+        <div style={{ background: 'var(--primary)', padding: '20px', textAlign: 'center', color: 'white' }}>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>AttendSoft</h1>
+          <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>CDGI Attendance System</p>
+        </div>
 
-      <div className="cdgi-body" style={s.body}>
-        <div style={s.card}>
-
-          {/* Topbar */}
-          <div style={s.topbar}>
-
-            <div style={s.topbarTitle}>AttendX</div>
+        {/* Card body */}
+        <div style={{ padding: '32px' }}>
+          
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            {!logoError ? (
+              <img
+                src="/cdgi_logo.jpeg"
+                alt="CDGI Logo"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'contain', boxShadow: 'var(--shadow-sm)' }}
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '700', margin: '0 auto' }}>A</div>
+            )}
           </div>
 
-          {/* Card body */}
-          <div style={s.cardBody}>
+          {/* Role */}
+          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '24px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+              <input type="radio" name="role" value="admin" checked={role === 'admin'} onChange={() => setRole('admin')} style={{ accentColor: 'var(--primary)' }} />
+              Administrator
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+              <input type="radio" name="role" value="teacher" checked={role === 'teacher'} onChange={() => setRole('teacher')} style={{ accentColor: 'var(--primary)' }} />
+              Faculty
+            </label>
+          </div>
 
-            {/* Logo */}
-            <div style={s.logoWrap}>
-              {!logoError ? (
-                <img
-                  src="/cdgi_logo.jpeg"
-                  alt="CDGI Logo"
-                  style={s.logo}
-                  onError={() => setLogoError(true)}
-                />
-              ) : (
-                <div style={s.logoFallback}>CDGI</div>
-              )}
-            </div>
+          {/* Email */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: 'var(--text-muted)' }}>Email Address</label>
+            <input
+              className={`form-input ${emailError ? 'error' : ''}`}
+              type="email"
+              placeholder={role === 'admin' ? 'admin@cdgi.ac.in' : 'faculty@cdgi.ac.in'}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              onKeyDown={handleKeyDown}
+            />
+            {emailError && <span className="error-text">{emailError}</span>}
+          </div>
 
-            {/* Role */}
-            <div style={s.roleRow}>
-              <label style={s.roleLabel}>
-                <input className="cdgi-radio" type="radio" name="role" value="admin"
-                  checked={role === 'admin'} onChange={() => setRole('admin')} />
-                Admin
-              </label>
-              <label style={s.roleLabel}>
-                <input className="cdgi-radio" type="radio" name="role" value="teacher"
-                  checked={role === 'teacher'} onChange={() => setRole('teacher')} />
-                Faculty
-              </label>
-            </div>
-
-            {/* Email */}
-            <div style={s.inputGroup}>
+          {/* Password */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: 'var(--text-muted)' }}>Password</label>
+            <div style={{ position: 'relative' }}>
               <input
-                className="cdgi-input"
-                style={s.input}
-                type="email"
-                placeholder={role === 'admin' ? 'Admin Email' : 'Faculty Email (eg. faculty@cdgi.ac.in)'}
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                className={`form-input ${passwordError ? 'error' : ''}`}
+                style={{ paddingRight: '40px' }}
+                type={showPass ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
                 onKeyDown={handleKeyDown}
               />
-            </div>
-
-            {/* Password */}
-            <div style={s.inputGroup}>
-              <div style={s.passWrap}>
-                <input
-                  className="cdgi-input"
-                  style={{ ...s.input, paddingRight: 40 }}
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="Password"
-                  value={password}
-                  onChange={e => handlePasswordChange(e.target.value)}
-                  onFocus={() => setShowHints(true)}
-                  onKeyDown={handleKeyDown}
-                />
-                <button style={s.eyeBtn} type="button" onClick={() => setShowPass(!showPass)}>
-                  {showPass ? '🙈' : '👁'}
-                </button>
-              </div>
-
-              {showHints && (
-                <div style={s.hints}>
-                  <HintRow ok={passChecks.len} text="Minimum 8 characters" />
-                  <HintRow ok={passChecks.upper} text="At least 1 uppercase letter (A-Z)" />
-                  <HintRow ok={passChecks.lower} text="At least 1 lowercase letter (a-z)" />
-                  <HintRow ok={passChecks.num} text="At least 1 number (0-9)" />
-                  <HintRow ok={passChecks.special} text="At least 1 special character (!@#$ etc.)" />
-                </div>
-              )}
-            </div>
-
-            {/* Forgot password */}
-            <div style={s.linksRow}>
-              <button className="cdgi-link" style={s.linkBtn} type="button">
-                Forgot Password?
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '16px' }}
+              >
+                {showPass ? '🙈' : '👁'}
               </button>
             </div>
-
-            {/* Login btn */}
-            <button
-              className="cdgi-login-btn"
-              style={{ ...s.loginBtn, opacity: loading ? 0.7 : 1 }}
-              onClick={handleLogin}
-              disabled={loading}
-            >
-              {loading ? 'Logging in...' : 'Login »'}
-            </button>
-
+            {passwordError && <span className="error-text">{passwordError}</span>}
           </div>
+
+          {/* Login btn */}
+          <button
+            className="btn-primary"
+            style={{ width: '100%', padding: '12px' }}
+            onClick={handleLogin}
+            disabled={loading}
+          >
+            {loading ? 'Authenticating...' : 'Sign In'}
+          </button>
+
         </div>
       </div>
-    </>
+    </div>
   );
 }
-
-const s = {
-  body: {
-    fontFamily: "'Poppins', sans-serif",
-    background: '#D6DCE4',
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    background: '#fff',
-    width: 420,
-    borderRadius: 4,
-    overflow: 'hidden',
-    boxShadow: '0 2px 16px rgba(0,0,0,.12)',
-  },
-  topbar: {
-    background: '#2C3E6B',
-    padding: '14px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  topbarIcon: {
-    width: 30, height: 30,
-    borderRadius: '50%',
-    background: '#F0C040',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 16, fontWeight: 700, color: '#2C3E6B', flexShrink: 0,
-  },
-  topbarTitle: { color: '#fff', fontSize: 14, fontWeight: 500, letterSpacing: 0.2 },
-  cardBody: { padding: '28px 36px 36px', textAlign: 'center' },
-  logoWrap: { marginBottom: 18 },
-  logo: { width: 115, height: 115, objectFit: 'contain', borderRadius: '50%' },
-  logoFallback: {
-    width: 115, height: 115, borderRadius: '50%',
-    background: '#2C3E6B', margin: '0 auto',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#fff', fontSize: 24, fontWeight: 700,
-  },
-  roleRow: { display: 'flex', justifyContent: 'center', gap: 28, marginBottom: 18 },
-  roleLabel: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: '#333', cursor: 'pointer' },
-  inputGroup: { marginBottom: 13, textAlign: 'left' },
-  input: {
-    width: '100%', padding: '11px 14px',
-    border: '1px solid #C8CDD6', borderRadius: 4,
-    fontFamily: "'Poppins', sans-serif",
-    fontSize: 13, color: '#333', transition: 'border-color .2s',
-  },
-  passWrap: { position: 'relative' },
-  eyeBtn: {
-    position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)',
-    background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#AAB0BB',
-  },
-  hints: { marginTop: 6, textAlign: 'left' },
-  hint: { fontSize: 11, lineHeight: 1.7 },
-  linksRow: { display: 'flex', justifyContent: 'flex-start', marginBottom: 16 },
-  linkBtn: {
-    fontSize: 12, color: '#2563EB', background: 'none', border: 'none',
-    cursor: 'pointer', fontFamily: "'Poppins', sans-serif", padding: 0,
-  },
-  loginBtn: {
-    background: '#2C3E6B', color: '#fff', border: 'none', borderRadius: 4,
-    padding: '11px 36px', fontFamily: "'Poppins', sans-serif",
-    fontSize: 14, fontWeight: 500, cursor: 'pointer',
-    transition: 'background .2s', letterSpacing: 0.3,
-  },
-};

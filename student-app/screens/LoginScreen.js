@@ -38,7 +38,7 @@ export default function LoginScreen({ navigation }) {
           <View style={s.logoCircle}>
             <Text style={s.logoText}>A</Text>
           </View>
-          <Text style={s.brandName}>AMS — CDGI</Text>
+          <Text style={s.brandName}>AttendSoft — CDGI</Text>
           <Text style={s.brandSub}>Attendance Monitoring System</Text>
           <Text style={s.collegeName}>Chameli Devi Group of Institutions</Text>
         </View>
