@@ -14,6 +14,11 @@ export default function TeacherDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [activeAttendance, setActiveAttendance] = useState([]);
 
+  // Manual Rollcall state
+  const [showManualAttendance, setShowManualAttendance] = useState(false);
+  const [manualSessionId, setManualSessionId] = useState(null);
+  const [manualAttendanceData, setManualAttendanceData] = useState([]);
+
   // Timetable based state
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
@@ -71,6 +76,31 @@ export default function TeacherDashboard() {
   const fetchSessions = async () => {
     try { const res = await api.get(`/sessions/teacher/${user.id}`); setSessions(res.data); }
     catch { toast.error('Could not fetch sessions'); }
+  };
+
+  const openManualAttendance = async (session_id) => {
+    setManualSessionId(session_id);
+    setShowManualAttendance(true);
+    try {
+      const res = await api.get(`/attendance/session/${session_id}`);
+      setManualAttendanceData(res.data);
+    } catch { toast.error('Failed to load students'); }
+  };
+
+  const submitManualAttendance = async () => {
+    try {
+      const updates = manualAttendanceData.map(att => ({
+        student_id: att.student_id,
+        status: att.status
+      }));
+      await api.patch('/attendance/batch-override', {
+        session_id: manualSessionId,
+        attendance_data: updates
+      });
+      toast.success('Attendance updated successfully');
+      setShowManualAttendance(false);
+      if (manualSessionId === activeSession) fetchActiveAttendance();
+    } catch { toast.error('Failed to update attendance'); }
   };
 
   const fetchTodaySchedule = async () => {
@@ -357,7 +387,10 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', gap: '12px' }}>
+                <button className="btn-primary" style={{ background: 'var(--surface)', color: 'var(--primary)', border: '1.5px solid var(--primary)' }} onClick={() => openManualAttendance(activeSession)}>
+                  📝 Manual Rollcall
+                </button>
                 <button className="btn-primary" style={{ background: 'var(--surface)', color: 'var(--error)', border: '1.5px solid var(--error)' }} onClick={() => endSession(activeSession)}>
                   ⏹ End Session
                 </button>
@@ -393,12 +426,11 @@ export default function TeacherDashboard() {
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
-                      {s2.is_active ? (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => setActiveSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-main)' }}>Show QR</button>
-                          <button onClick={() => endSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--error)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--error)' }}>End</button>
-                        </div>
-                      ) : <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Completed</span>}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {s2.is_active && <button onClick={() => setActiveSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-main)' }}>Show QR</button>}
+                        {s2.is_active && <button onClick={() => endSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--error)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--error)' }}>End</button>}
+                        <button onClick={() => openManualAttendance(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--primary)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--primary)' }}>Rollcall</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -526,6 +558,57 @@ export default function TeacherDashboard() {
               <button className="btn-primary" onClick={createManual}>
                 Generate QR & Start
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Rollcall Modal */}
+      {showManualAttendance && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+          <div className="card fade-in" style={{ width: '600px', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+            <div style={{ background: 'var(--primary)', color: 'white', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '16px', fontWeight: '600' }}>Manual Rollcall</div>
+              <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '20px', cursor: 'pointer' }} onClick={() => setShowManualAttendance(false)}>✕</button>
+            </div>
+            <div style={{ padding: '16px 24px', flex: 1, overflowY: 'auto', background: 'var(--bg-color)' }}>
+              {manualAttendanceData.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', padding: '40px' }}>No students found for this session.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {manualAttendanceData.map(att => (
+                    <div key={att.student_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main)' }}>{att.students?.users?.name || 'Unknown Student'}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{att.students?.enrollment_no || '—'}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', color: att.status === 'present' ? 'var(--success)' : 'var(--text-muted)' }}>
+                          <input type="radio" name={`status-${att.student_id}`} value="present" checked={att.status === 'present'} 
+                            onChange={() => setManualAttendanceData(prev => prev.map(p => p.student_id === att.student_id ? { ...p, status: 'present' } : p))} 
+                            style={{ accentColor: 'var(--success)' }} />
+                          Present
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', color: att.status === 'absent' ? 'var(--error)' : 'var(--text-muted)' }}>
+                          <input type="radio" name={`status-${att.student_id}`} value="absent" checked={att.status === 'absent'} 
+                            onChange={() => setManualAttendanceData(prev => prev.map(p => p.student_id === att.student_id ? { ...p, status: 'absent' } : p))} 
+                            style={{ accentColor: 'var(--error)' }} />
+                          Absent
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', background: 'var(--surface)', alignItems: 'center' }}>
+               <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                 Present: <span style={{ fontWeight: '600', color: 'var(--success)' }}>{manualAttendanceData.filter(a => a.status === 'present').length}</span>
+               </div>
+               <div style={{ display: 'flex', gap: '12px' }}>
+                 <button className="btn-primary" style={{ background: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)' }} onClick={() => setShowManualAttendance(false)}>Cancel</button>
+                 <button className="btn-primary" onClick={submitManualAttendance} disabled={manualAttendanceData.length === 0}>Submit Attendance</button>
+               </div>
             </div>
           </div>
         </div>
