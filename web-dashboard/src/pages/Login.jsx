@@ -13,7 +13,6 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForgotPass, setShowForgotPass] = useState(false);
-  const [forgotRole, setForgotRole] = useState('student');
   const [resetSent, setResetSent] = useState(false);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -53,7 +52,7 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      await api.post('/notifications/request-reset', { email, role: forgotRole });
+      await api.post('/notifications/request-reset', { email });
       setResetSent(true);
       toast.success('Password reset request sent to Admin!');
     } catch (err) {
@@ -204,15 +203,6 @@ export default function Login() {
                 </div>
               ) : (
                 <div className="fade-in">
-                  <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Your Role</label>
-                    <select className="form-input" style={{ padding: '14px 16px' }} value={forgotRole} onChange={e => setForgotRole(e.target.value)}>
-                      <option value="student">Student</option>
-                      <option value="teacher">Faculty</option>
-                      <option value="admin">Administrator</option>
-                    </select>
-                  </div>
-                  
                   <div style={{ marginBottom: '32px' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
                     <input

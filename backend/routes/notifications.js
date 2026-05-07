@@ -6,20 +6,19 @@ const requireAuth = require('../middleware/auth'); // assuming this exists and a
 
 // 1. Request Password Reset (Public)
 router.post('/request-reset', async (req, res) => {
-  const { email, role } = req.body;
-  if (!email || !role) return res.status(400).json({ error: 'Email and role are required' });
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
 
   try {
-    // Check if user exists
+    // Check if user exists and fetch their role automatically
     const { data: user, error: userErr } = await supabase
       .from('users')
-      .select('id')
+      .select('id, role')
       .eq('email', email)
-      .eq('role', role)
       .single();
 
     if (userErr || !user) {
-      return res.status(400).json({ error: 'No account found with that email and role.' });
+      return res.status(400).json({ error: 'No account found with that email.' });
     }
 
     // Insert notification (target_role is hardcoded to 'admin' per user request)
@@ -27,7 +26,7 @@ router.post('/request-reset', async (req, res) => {
       .from('notifications')
       .insert({
         sender_email: email,
-        sender_role: role,
+        sender_role: user.role,
         target_role: 'admin',
         type: 'PASSWORD_RESET',
         status: 'PENDING'
