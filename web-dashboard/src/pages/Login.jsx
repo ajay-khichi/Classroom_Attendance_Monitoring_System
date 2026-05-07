@@ -5,7 +5,6 @@ import collegeImage from '../assets/college.jpg';
 
 export default function Login() {
   const { login } = useAuth();
-  const [role, setRole] = useState('teacher');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
@@ -103,22 +102,6 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Role Selection */}
-          <div style={{ display: 'flex', background: 'var(--bg-color)', padding: '6px', borderRadius: '12px', marginBottom: '32px' }}>
-            <button 
-              onClick={() => setRole('admin')}
-              style={{ flex: 1, padding: '10px 0', border: 'none', background: role === 'admin' ? 'white' : 'transparent', color: role === 'admin' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: role === 'admin' ? '600' : '500', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: role === 'admin' ? 'var(--shadow-sm)' : 'none' }}
-            >
-              Administrator
-            </button>
-            <button 
-              onClick={() => setRole('teacher')}
-              style={{ flex: 1, padding: '10px 0', border: 'none', background: role === 'teacher' ? 'white' : 'transparent', color: role === 'teacher' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: role === 'teacher' ? '600' : '500', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: role === 'teacher' ? 'var(--shadow-sm)' : 'none' }}
-            >
-              Faculty
-            </button>
-          </div>
-
           {/* Email */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
@@ -126,7 +109,7 @@ export default function Login() {
               className={`form-input ${emailError ? 'error' : ''}`}
               style={{ padding: '14px 16px' }}
               type="email"
-              placeholder={role === 'admin' ? 'admin@cdgi.ac.in' : 'faculty@cdgi.ac.in'}
+              placeholder="Enter your email address"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onBlur={() => setEmailTouched(true)}
