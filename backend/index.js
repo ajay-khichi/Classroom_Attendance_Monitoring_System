@@ -8,6 +8,7 @@ const attendanceRoutes = require('./routes/attendance');
 const qrRoutes = require('./routes/qr');
 const studentRoutes = require('./routes/students');
 const timetableRoutes = require('./routes/timetable');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/timetable', timetableRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'AttendSoft API running' }));
 

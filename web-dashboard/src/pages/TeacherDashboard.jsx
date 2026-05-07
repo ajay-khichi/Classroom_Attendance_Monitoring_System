@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import NotificationBell from '../components/NotificationBell';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -228,8 +229,11 @@ export default function TeacherDashboard() {
                 <span>📅 {today}</span>
               </div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>👨‍🏫</span> Faculty Dashboard
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <NotificationBell userRole="teacher" />
+              <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>👨‍🏫</span> Faculty Dashboard
+              </div>
             </div>
           </div>
 

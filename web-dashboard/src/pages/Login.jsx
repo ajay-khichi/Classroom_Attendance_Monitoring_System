@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import collegeImage from '../assets/college.jpg';
+import api from '../api/axios';
 
 export default function Login() {
   const { login } = useAuth();
@@ -11,6 +12,9 @@ export default function Login() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showForgotPass, setShowForgotPass] = useState(false);
+  const [forgotRole, setForgotRole] = useState('student');
+  const [resetSent, setResetSent] = useState(false);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const emailError = emailTouched && (!email ? 'Email is required' : !isEmailValid ? 'Please enter a valid email' : '');
@@ -36,7 +40,27 @@ export default function Login() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleLogin();
+    if (e.key === 'Enter') {
+      if (showForgotPass) handleForgotPass();
+      else handleLogin();
+    }
+  };
+
+  const handleForgotPass = async () => {
+    setEmailTouched(true);
+    if (!email || emailError) {
+      return toast.error('Please enter a valid email address');
+    }
+    setLoading(true);
+    try {
+      await api.post('/notifications/request-reset', { email, role: forgotRole });
+      setResetSent(true);
+      toast.success('Password reset request sent to Admin!');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to send request');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,60 +126,124 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Email */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
-            <input
-              className={`form-input ${emailError ? 'error' : ''}`}
-              style={{ padding: '14px 16px' }}
-              type="email"
-              placeholder="Enter your email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onBlur={() => setEmailTouched(true)}
-              onKeyDown={handleKeyDown}
-            />
-            {emailError && <span className="error-text">{emailError}</span>}
-          </div>
+          {!showForgotPass ? (
+            <>
+              {/* Email */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
+                <input
+                  className={`form-input ${emailError ? 'error' : ''}`}
+                  style={{ padding: '14px 16px' }}
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onBlur={() => setEmailTouched(true)}
+                  onKeyDown={handleKeyDown}
+                />
+                {emailError && <span className="error-text">{emailError}</span>}
+              </div>
 
-          {/* Password */}
-          <div style={{ marginBottom: '32px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                className={`form-input ${passwordError ? 'error' : ''}`}
-                style={{ padding: '14px 16px', paddingRight: '40px' }}
-                type={showPass ? 'text' : 'password'}
-                placeholder="Enter your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onBlur={() => setPasswordTouched(true)}
-                onKeyDown={handleKeyDown}
-              />
+              {/* Password */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className={`form-input ${passwordError ? 'error' : ''}`}
+                    style={{ padding: '14px 16px', paddingRight: '40px' }}
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onBlur={() => setPasswordTouched(true)}
+                    onKeyDown={handleKeyDown}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '16px', cursor: 'pointer' }}
+                  >
+                    {showPass ? '🙈' : '👁'}
+                  </button>
+                </div>
+                {passwordError && <span className="error-text">{passwordError}</span>}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
+                <button type="button" onClick={() => setShowForgotPass(true)} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  Forgot Password?
+                </button>
+              </div>
+
+              {/* Login btn */}
               <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '16px', cursor: 'pointer' }}
+                className="btn-primary"
+                style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: '600', borderRadius: '10px' }}
+                onClick={handleLogin}
+                disabled={loading}
               >
-                {showPass ? '🙈' : '👁'}
+                {loading ? 'Authenticating...' : 'Sign In'}
               </button>
-            </div>
-            {passwordError && <span className="error-text">{passwordError}</span>}
-          </div>
+              
+              <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                Need help accessing your account? Contact IT Support.
+              </p>
+            </>
+          ) : (
+            <>
+              {resetSent ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#DCFCE7', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 24px' }}>✓</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-main)', marginBottom: '12px' }}>Request Sent</h3>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.6 }}>
+                    Your password reset request has been sent to the administrator. You will be notified once it is resolved.
+                  </p>
+                  <button className="btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '10px' }} onClick={() => { setShowForgotPass(false); setResetSent(false); }}>
+                    Back to Login
+                  </button>
+                </div>
+              ) : (
+                <div className="fade-in">
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Your Role</label>
+                    <select className="form-input" style={{ padding: '14px 16px' }} value={forgotRole} onChange={e => setForgotRole(e.target.value)}>
+                      <option value="student">Student</option>
+                      <option value="teacher">Faculty</option>
+                      <option value="admin">Administrator</option>
+                    </select>
+                  </div>
+                  
+                  <div style={{ marginBottom: '32px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
+                    <input
+                      className={`form-input ${emailError ? 'error' : ''}`}
+                      style={{ padding: '14px 16px' }}
+                      type="email"
+                      placeholder="Enter your registered email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      onBlur={() => setEmailTouched(true)}
+                      onKeyDown={handleKeyDown}
+                    />
+                    {emailError && <span className="error-text">{emailError}</span>}
+                  </div>
 
-          {/* Login btn */}
-          <button
-            className="btn-primary"
-            style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: '600', borderRadius: '10px' }}
-            onClick={handleLogin}
-            disabled={loading}
-          >
-            {loading ? 'Authenticating...' : 'Sign In'}
-          </button>
-          
-          <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--text-muted)' }}>
-            Need help accessing your account? Contact IT Support.
-          </p>
+                  <button
+                    className="btn-primary"
+                    style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: '600', borderRadius: '10px', marginBottom: '16px' }}
+                    onClick={handleForgotPass}
+                    disabled={loading}
+                  >
+                    {loading ? 'Sending Request...' : 'Send Reset Request'}
+                  </button>
+
+                  <button type="button" onClick={() => setShowForgotPass(false)} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', padding: '10px' }}>
+                    Back to Login
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
         </div>
       </div>

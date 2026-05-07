@@ -1,4 +1,5 @@
 import React from 'react';
+import NotificationBell from '../NotificationBell';
 
 export default function DashboardTab({ stats, departments, students, stuAttendance, recentActivity, user, today }) {
   return (
@@ -14,8 +15,11 @@ export default function DashboardTab({ stats, departments, students, stuAttendan
               <span>📅 {today}</span>
             </div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>🛡️</span> Admin
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <NotificationBell userRole="admin" />
+            <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🛡️</span> Admin
+            </div>
           </div>
         </div>
 
