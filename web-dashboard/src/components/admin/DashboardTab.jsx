@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function DashboardTab({ stats, departments, students, stuAttendance, recentActivity }) {
+export default function DashboardTab({ stats, departments, students, stuAttendance, recentActivity, user, today }) {
   return (
     <div className="fade-in">
       {/* Top Banner Area */}
