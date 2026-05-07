@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import TimetableManager from '../components/TimetableManager';
+import NotificationBell from '../components/NotificationBell';
 
 import DashboardTab from '../components/admin/DashboardTab';
 import FacultyTab from '../components/admin/FacultyTab';
@@ -329,20 +330,52 @@ export default function AdminDashboard() {
 
       {/* MAIN CONTENT */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
-        {activeTab !== 'dashboard' && (
-          <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>
-              {navTabs.find(t => t.key === activeTab)?.label}
+        <div style={{ background: 'var(--topbar-gradient)', padding: '32px 32px 48px', color: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: activeTab === 'dashboard' ? '24px' : '0' }}>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '4px' }}>
+                {activeTab === 'dashboard' 
+                  ? `Good ${new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, ${user?.name?.split(' ')[0] || 'Admin'}!`
+                  : navTabs.find(t => t.key === activeTab)?.label}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', opacity: 0.9 }}>
+                <span>📅 {today}</span>
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{today}</div>
-              <span style={{ background: '#EEF2FF', color: 'var(--primary)', fontSize: '11px', fontWeight: '600', padding: '4px 12px', borderRadius: '20px' }}>Admin</span>
+              <NotificationBell userRole="admin" />
+              <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🛡️</span> Admin
+              </div>
             </div>
-          </header>
-        )}
+          </div>
 
-        <div className="page-container" style={{ flex: 1, overflowY: 'auto', padding: activeTab === 'dashboard' ? '0' : '32px', maxWidth: activeTab === 'dashboard' ? '100%' : '1200px' }}>
-          {activeTab === 'dashboard' && <DashboardTab stats={stats} departments={departments} students={students} stuAttendance={stuAttendance} recentActivity={recentActivity} user={user} today={today} />}
+          {activeTab === 'dashboard' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Faculties</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.teachers}</div>
+              </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Students</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.students}</div>
+              </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Rooms</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.rooms}</div>
+              </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '13px', opacity: 0.8 }}>Avg Attendance</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0', color: stats.avg >= 75 ? '#DCFCE7' : stats.avg >= 60 ? '#FEF08A' : '#FECACA' }}>
+                  {stats.avg}%
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="page-container" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 32px', marginTop: '-24px' }}>
+          {activeTab === 'dashboard' && <DashboardTab departments={departments} students={students} stuAttendance={stuAttendance} recentActivity={recentActivity} />}
           {activeTab === 'faculties' && <FacultyTab teachers={teachers} departments={departments} facDept={facDept} setFacDept={setFacDept} setShowAddFac={setShowAddFac} setCredStep={setCredStep} setGenCreds={setGenCreds} setFacForm={setFacForm} setFacErrors={setFacErrors} handleRemoveFaculty={handleRemoveFaculty} />}
           {activeTab === 'students' && <StudentsTab students={students} departments={departments} stuAttendance={stuAttendance} stuFilter={stuFilter} setStudentFilter={setStudentFilter} />}
           {activeTab === 'rooms' && <RoomsTab rooms={rooms} setShowAddRoom={setShowAddRoom} setRoomErrors={setRoomErrors} setRoomForm={setRoomForm} handleRemoveRoom={handleRemoveRoom} />}

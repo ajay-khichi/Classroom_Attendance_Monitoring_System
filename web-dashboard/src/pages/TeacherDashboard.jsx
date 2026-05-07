@@ -441,9 +441,9 @@ export default function TeacherDashboard() {
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        {s2.is_active && <button onClick={() => setActiveSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-main)' }}>Show QR</button>}
-                        {s2.is_active && <button onClick={() => endSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--error)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--error)' }}>End</button>}
-                        <button onClick={() => openManualAttendance(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--primary)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', color: 'var(--primary)' }}>Rollcall</button>
+                        {s2.is_active && <button className="btn-primary" onClick={() => setActiveSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '12px', color: 'var(--text-main)', boxShadow: 'none' }}>Show QR</button>}
+                        {s2.is_active && <button className="btn-primary" onClick={() => endSession(s2.id)} style={{ padding: '6px 12px', background: 'var(--error)', border: '1px solid var(--error)', borderRadius: '6px', fontSize: '12px', color: 'white', boxShadow: 'none' }}>End</button>}
+                        <button className="btn-primary" onClick={() => openManualAttendance(s2.id)} style={{ padding: '6px 12px', background: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '6px', fontSize: '12px', color: 'white', boxShadow: 'none' }}>Rollcall</button>
                       </div>
                     </td>
                   </tr>
@@ -493,29 +493,6 @@ export default function TeacherDashboard() {
                   </select>
                 </div>
               </div>
-              
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Subject</label>
-                <select className="form-input" value={form.subject_id}
-                  onChange={e => setForm({ ...form, subject_id: e.target.value })}>
-                  <option value="">-- Select Subject --</option>
-                  {subjects.map(sub => (
-                    <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Room</label>
-                <select className="form-input" value={form.room_id}
-                  onChange={e => setForm({ ...form, room_id: e.target.value })}>
-                  <option value="">-- Select Room --</option>
-                  {rooms.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Department</label>
@@ -541,7 +518,7 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Semester</label>
                   <select className="form-input" value={filter.sem}
@@ -564,6 +541,28 @@ export default function TeacherDashboard() {
                     <option value="B">Section B</option>
                   </select>
                 </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Subject</label>
+                <select className="form-input" value={form.subject_id}
+                  onChange={e => setForm({ ...form, subject_id: e.target.value })}>
+                  <option value="">-- Select Subject --</option>
+                  {subjects.map(sub => (
+                    <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '6px' }}>Room</label>
+                <select className="form-input" value={form.room_id}
+                  onChange={e => setForm({ ...form, room_id: e.target.value })}>
+                  <option value="">-- Select Room --</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--bg-color)' }}>
