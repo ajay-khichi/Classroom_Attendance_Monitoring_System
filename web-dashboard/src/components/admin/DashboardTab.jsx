@@ -3,30 +3,48 @@ import React from 'react';
 export default function DashboardTab({ stats, departments, students, stuAttendance, recentActivity }) {
   return (
     <div className="fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div className="card" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}>
-          <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Students</div>
-          <div style={{ fontSize: '28px', fontWeight: '700' }}>{stats.students}</div>
-          <div style={{ fontSize: '12px', opacity: 0.7 }}>Registered students</div>
+      {/* Top Banner Area */}
+      <div style={{ background: 'var(--topbar-gradient)', padding: '32px 32px 48px', color: 'white' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '4px' }}>
+              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {user?.name?.split(' ')[0] || 'Admin'}!
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', opacity: 0.9 }}>
+              <span>📅 {today}</span>
+            </div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🛡️</span> Admin
+          </div>
         </div>
-        <div className="card">
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Total Faculties</div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-main)' }}>{stats.teachers}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Active teaching staff</div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Total Rooms</div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-main)' }}>{stats.rooms}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Classrooms + Labs</div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Avg. Attendance</div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-main)' }}>{stats.avg}%</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Overall average</div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+            <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Students</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.students}</div>
+            <div style={{ fontSize: '11px', opacity: 0.7 }}>Registered students</div>
+          </div>
+          <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+            <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Faculties</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.teachers}</div>
+            <div style={{ fontSize: '11px', opacity: 0.7 }}>Active teaching staff</div>
+          </div>
+          <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+            <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Rooms</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.rooms}</div>
+            <div style={{ fontSize: '11px', opacity: 0.7 }}>Classrooms + Labs</div>
+          </div>
+          <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+            <div style={{ fontSize: '13px', opacity: 0.8 }}>Avg. Attendance</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{stats.avg}%</div>
+            <div style={{ fontSize: '11px', opacity: 0.7 }}>Overall average</div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div style={{ padding: '0 32px 32px', marginTop: '-24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         <div className="card">
           <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>Department-wise Attendance</div>
           {departments.map(d => {
@@ -68,6 +86,7 @@ export default function DashboardTab({ stats, departments, students, stuAttendan
           ))}
           {recentActivity.length === 0 && <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '10px 0' }}>No recent activity.</div>}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -217,34 +217,44 @@ export default function TeacherDashboard() {
       <Sidebar />
       <div className="page-container" style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column' }}>
         {/* Topbar */}
-        <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-          <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>Dashboard</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{today}</div>
+        {/* Top Banner Area */}
+        <div style={{ background: 'var(--topbar-gradient)', padding: '32px 32px 48px', color: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '4px' }}>
+                Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {user?.name?.split(' ')[0] || 'Faculty'}!
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', opacity: 0.9 }}>
+                <span>📅 {today}</span>
+              </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>👨‍🏫</span> Faculty Dashboard
+            </div>
           </div>
-        </header>
 
-        <div style={{ padding: '32px', flex: 1 }}>
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            <div className="card">
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Today's Sessions</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: 'var(--text-main)' }}>{todaySessions.length}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{todaySessions.filter(s => !s.is_active).length} completed</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '13px', opacity: 0.8 }}>Today's Sessions</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{todaySessions.length}</div>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>{todaySessions.filter(s => !s.is_active).length} completed</div>
             </div>
-            <div className="card">
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Total Sessions</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: 'var(--text-main)' }}>{sessions.length}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>All time</div>
+            <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Sessions</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0' }}>{sessions.length}</div>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>All time</div>
             </div>
-            <div className="card">
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Active Session</div>
-              <div style={{ fontSize: '28px', fontWeight: '600', color: activeSession ? 'var(--success)' : 'var(--text-muted)' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '20px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '13px', opacity: 0.8 }}>Active Session</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', margin: '4px 0', color: activeSession ? '#DCFCE7' : 'white' }}>
                 {activeSession ? 'LIVE' : 'None'}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{activeSession ? 'QR is running' : 'Start a new session'}</div>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>{activeSession ? 'QR is running' : 'Start a new session'}</div>
             </div>
           </div>
+        </div>
+
+        <div style={{ padding: '0 32px 32px', flex: 1, marginTop: '-24px' }}>
 
           {/* TODAY'S SCHEDULE — main section */}
           <div className="card" style={{ marginBottom: '24px' }}>

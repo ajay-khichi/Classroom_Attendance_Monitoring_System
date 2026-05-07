@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #4F46E5; /* Indigo 600 */
-  --primary-hover: #4338CA;
+  --primary: #2C7B8E; /* Teal Primary */
+  --primary-hover: #22606F;
+  --sidebar-bg: #1A3644; /* Dark Slate Teal */
+  --topbar-gradient: linear-gradient(135deg, #247d8f 0%, #3e9ca8 100%);
   --secondary: #10B981; /* Emerald 500 */
   --bg-color: #F8FAFC; /* Slate 50 */
   --surface: #FFFFFF;

@@ -278,7 +278,7 @@ export default function AdminDashboard() {
   return (
     <div className="fade-in" style={{ display: 'flex', minHeight: '100vh' }}>
       {/* SIDEBAR */}
-      <aside style={{ width: '240px', background: 'var(--primary)', color: 'white', display: 'flex', flexDirection: 'column' }}>
+      <aside style={{ width: '240px', background: 'var(--sidebar-bg)', color: 'white', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'white', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '18px' }}>A</div>
           <div>
@@ -329,18 +329,20 @@ export default function AdminDashboard() {
 
       {/* MAIN CONTENT */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
-        <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-          <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>
-            {navTabs.find(t => t.key === activeTab)?.label}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{today}</div>
-            <span style={{ background: '#EEF2FF', color: 'var(--primary)', fontSize: '11px', fontWeight: '600', padding: '4px 12px', borderRadius: '20px' }}>Admin</span>
-          </div>
-        </header>
+        {activeTab !== 'dashboard' && (
+          <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>
+              {navTabs.find(t => t.key === activeTab)?.label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{today}</div>
+              <span style={{ background: '#EEF2FF', color: 'var(--primary)', fontSize: '11px', fontWeight: '600', padding: '4px 12px', borderRadius: '20px' }}>Admin</span>
+            </div>
+          </header>
+        )}
 
-        <div className="page-container" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
-          {activeTab === 'dashboard' && <DashboardTab stats={stats} departments={departments} students={students} stuAttendance={stuAttendance} recentActivity={recentActivity} />}
+        <div className="page-container" style={{ flex: 1, overflowY: 'auto', padding: activeTab === 'dashboard' ? '0' : '32px', maxWidth: activeTab === 'dashboard' ? '100%' : '1200px' }}>
+          {activeTab === 'dashboard' && <DashboardTab stats={stats} departments={departments} students={students} stuAttendance={stuAttendance} recentActivity={recentActivity} user={user} today={today} />}
           {activeTab === 'faculties' && <FacultyTab teachers={teachers} departments={departments} facDept={facDept} setFacDept={setFacDept} setShowAddFac={setShowAddFac} setCredStep={setCredStep} setGenCreds={setGenCreds} setFacForm={setFacForm} setFacErrors={setFacErrors} handleRemoveFaculty={handleRemoveFaculty} />}
           {activeTab === 'students' && <StudentsTab students={students} departments={departments} stuAttendance={stuAttendance} stuFilter={stuFilter} setStudentFilter={setStudentFilter} />}
           {activeTab === 'rooms' && <RoomsTab rooms={rooms} setShowAddRoom={setShowAddRoom} setRoomErrors={setRoomErrors} setRoomForm={setRoomForm} handleRemoveRoom={handleRemoveRoom} />}
