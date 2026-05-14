@@ -25,7 +25,7 @@ function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         {user ? (
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />

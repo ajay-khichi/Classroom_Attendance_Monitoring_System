@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ScrollView, StatusBar, SafeAreaView, ActivityIndicator
+  StyleSheet, Alert, ScrollView, StatusBar, SafeAreaView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, Animated
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -23,6 +24,24 @@ export default function SettingsScreen({ navigation }) {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const initials = (user?.name || 'ST').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -86,11 +105,17 @@ export default function SettingsScreen({ navigation }) {
         <View style={{ width: 48 }} />
       </View>
 
-      <ScrollView
-        style={{ flex: 1, backgroundColor: COLORS.bg }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <ScrollView
+          style={{ flex: 1, backgroundColor: COLORS.bg }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={s.profileCard}>
           <View style={s.avatar}>
             <Text style={s.avatarText}>{initials}</Text>
@@ -127,16 +152,19 @@ export default function SettingsScreen({ navigation }) {
 
         <Text style={s.sectionLabel}>Account</Text>
 
-        <TouchableOpacity style={s.logoutCard} onPress={() => {
-          Alert.alert('Logout', 'Are you sure you want to logout?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Logout', style: 'destructive', onPress: logout },
-          ]);
-        }}>
-          <Text style={s.logoutIcon}>⎋</Text>
-          <Text style={s.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={s.logoutCard} onPress={() => {
+            Alert.alert('Logout', 'Are you sure you want to logout?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Logout', style: 'destructive', onPress: logout },
+            ]);
+          }}>
+            <Text style={s.logoutIcon}>⎋</Text>
+            <Text style={s.logoutText}>Logout</Text>
+          </TouchableOpacity>
+          
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

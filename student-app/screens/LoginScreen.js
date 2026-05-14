@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator,
-  StatusBar, KeyboardAvoidingView, Platform, ScrollView
+  StatusBar, KeyboardAvoidingView, Platform, ScrollView, Animated
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,6 +12,24 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) return Alert.alert('Error', 'Please fill all fields');
@@ -28,10 +46,12 @@ export default function LoginScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
         {/* TOP SECTION */}
         <View style={s.topSection}>
@@ -90,6 +110,7 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

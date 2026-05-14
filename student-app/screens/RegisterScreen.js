@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ScrollView, StatusBar, ActivityIndicator
+  StyleSheet, Alert, ScrollView, StatusBar, ActivityIndicator,
+  KeyboardAvoidingView, Platform, Animated
 } from 'react-native';
 import api from '../api/axios';
 
@@ -13,6 +14,24 @@ export default function RegisterScreen({ navigation }) {
   });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -45,9 +64,14 @@ export default function RegisterScreen({ navigation }) {
   ];
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
         {/* TOP */}
         <View style={s.topSection}>
@@ -109,8 +133,9 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        </Animated.View>
       </ScrollView>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
